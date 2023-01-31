@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="7f2161bc-413d-410f-be37-37a55bb3b8b4" >
+		<db:mssql-connection host="cloud-services.demos.mulesoft.com" port="32635" user="sa" password="Mule123!" />
+	</db:config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="38b13d68-c4ad-4a0a-a369-32534492b264" >
+		<file:connection workingDir="/Users/sbangaloremunibaire/Desktop/Files" />
+	</file:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="6f8109a7-e562-43ed-b53b-debd5a2ecb84" >
+		<http:request-connection protocol="HTTPS" host="api.powerbi.com" />
+	</http:request-config>
+	<kafka:producer-config name="Apache_Kafka_Producer_configuration" doc:name="Apache Kafka Producer configuration" doc:id="489a652d-5bea-4770-8e63-6ff7c21853e8" >
+		<kafka:producer-plaintext-connection >
+			<kafka:bootstrap-servers >
+				<kafka:bootstrap-server value="tcp://cloud-services.demos.mulesoft.com:32267" />
+			</kafka:bootstrap-servers>
+		</kafka:producer-plaintext-connection>
+	</kafka:producer-config>
+	<flow name="HeterogeneousDataJoin" doc:id="d4b18e8b-6585-405e-a13d-dedf8458c4c2" >
+		<scheduler doc:name="Scheduler to run the flow" doc:id="a4bbc114-711c-43a0-8463-f0307f076bcd" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="1" timeUnit="HOURS" />
+			</scheduling-strategy>
+		</scheduler>
+		<scatter-gather doc:name="Scatter-Gather to parallely execute queries on 4 Databases-Tables in MS SQL" doc:id="caee8cd6-aa0a-4200-8d08-ad91c635f0f8" >
+			<route >
+				<db:select doc:name='Selecting records from Table "SalesOrders"' doc:id="39831076-290a-4baf-9785-a447ae4eff28" config-ref="Database_Config" >
+					<db:sql ><![CDATA[SELECT TOP 10 PERCENT * FROM master.dbo.SalesOrders]]></db:sql>
+				</db:select>
+			</route>
+			<route >
+				<db:select doc:name='Selecting records from Table "Customers"' doc:id="154f25cf-000f-4253-90d9-32932cfd0d75" config-ref="Database_Config">
+					<db:sql ><![CDATA[SELECT * FROM master.dbo.Customers]]></db:sql>
+				</db:select>
+			</route>
+			<route >
+				<db:select doc:name='Selecting records from Table "StoreLocations"' doc:id="ae36c246-7ed0-4c03-a964-be93b42e7a0d" config-ref="Database_Config" >
+					<db:sql ><![CDATA[SELECT * FROM master.dbo.StoreLocations]]></db:sql>
+				</db:select>
+			</route>
+			<route >
+				<db:select doc:name='Selecting records from Table "Products"' doc:id="cc753d89-194b-44df-96f1-7822530e5667" config-ref="Database_Config">
+					<db:sql ><![CDATA[Select * from master.dbo.Products]]></db:sql>
+				</db:select>
+			</route>
+			<route >
+				<db:select doc:name='Selecting records from Table "SalesTeam"' doc:id="d8b7225b-6b94-4129-b5ec-313427be33f5" config-ref="Database_Config">
+					<db:sql ><![CDATA[Select * from master.dbo.SalesTeam]]></db:sql>
+				</db:select>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Collating the data using DataWeave" doc:id="cbec34cc-9c1c-47c4-8442-633c9f3bf181" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var var1 = payload."0".payload
+var var2 = payload."1".payload
+var var3 = payload."2".payload
+var var4 = payload."3".payload
+var var5 = payload."4".payload
+---
+var1 map (var1value) ->
+{
+	SalesChannel: var1value.SalesChannel,
+	OrderDate: var1value.OrderDate,
+	OrderQuantity: var1value.OrderQuantity,
+	UnitPrice: var1value.UnitPrice,
+	(var2 filter($.*CustomerID contains var1value.CustomerID) map (var2value) -> {
+		CustomerNames: var2value.CustomerNames,
+		(var3 filter($.*StoreID contains var1value.StoreID) map (var3value) -> {
+		    CityName: var3value.CityName,
+		    State: var3value.State,
+		    (var4 filter($.*ProductID contains var1value.ProductID) map (var4value) -> {
+		        ProductName: var4value.ProductName,
+		        (var5 filter($.*SalesTeamID contains var1value.SalesTeamID) map (var5value) -> {
+		        SalesTeam: var5value.SalesTeam,
+		        Region: var5value.Region
+	})
+	})
+	})
+	})
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="1fa2e14a-0aae-466a-896c-708941e9dd0d" >
+			<route >
+				<file:write doc:name="Write" doc:id="a0687508-6cd8-4d9c-a3c5-dee9cb48a114" config-ref="File_Config" path="/Users/sbangaloremunibaire/Desktop/Files/JSONfile.json" >
+				</file:write>
+			</route>
+			<route >
+				<kafka:publish doc:name="Publish" doc:id="405c09eb-be79-4022-88b4-f0f19e3dddeb" config-ref="Apache_Kafka_Producer_configuration" topic="fnd-sales-analytics" partition="0" key="#[uuid()]"/>
+			</route>
+		</scatter-gather>
+		<logger level="INFO" doc:name="Logger to see output" doc:id="edb1ec09-8080-4f6b-a26a-b70f317f6988" message="#[payload]" />
+	</flow>
+</mule>

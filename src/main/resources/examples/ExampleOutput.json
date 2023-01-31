@@ -1,0 +1,26 @@
+[
+  {
+    "SalesChannel": "In-Store",
+    "OrderDate": "5/31/2018",
+    "OrderQuantity": 5,
+    "UnitPrice": "1,963.10",
+    "CustomerNames": "Rochester Ltd",
+    "CityName": "Babylon (Town)",
+    "State": "New York",
+    "ProductName": "Dining Furniture",
+    "SalesTeam": "Joshua Bennett",
+    "Region": "Northeast"
+  },
+  {
+    "SalesChannel": "Online",
+    "OrderDate": "5/31/2018",
+    "OrderQuantity": 3,
+    "UnitPrice": "3,939.60",
+    "CustomerNames": "Pacific Ltd",
+    "CityName": "Overland Park",
+    "State": "Kansas",
+    "ProductName": "Wreaths",
+    "SalesTeam": "Paul Holmes",
+    "Region": "Midwest"
+  }
+]

@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="Output" format="json">
+      <types:shape format="weave" example="examples/ExampleOutput.json"><![CDATA[%dw 2.0
+
+type Output = Array<{|  SalesChannel: String,   OrderDate: String,   OrderQuantity: Number {"typeId": "int"},   UnitPrice: String,   CustomerNames: String,   CityName: String,   State: String,   ProductName: String,   SalesTeam: String,   Region: String|}> {"example": "[{\\\"SalesChannel\\\":\\\"In-Store\\\",\\\"OrderDate\\\":\\\"5\\/31\\/2018\\\",\\\"OrderQuantity\\\":5,\\\"UnitPrice\\\":\\\"1,963.10\\\",\\\"CustomerNames\\\":\\\"Rochester Ltd\\\",\\\"CityName\\\":\\\"Babylon (Town)\\\",\\\"State\\\":\\\"New York\\\",\\\"ProductName\\\":\\\"Dining Furniture\\\",\\\"SalesTeam\\\":\\\"Joshua Bennett\\\",\\\"Region\\\":\\\"Northeast\\\"},{\\\"SalesChannel\\\":\\\"Online\\\",\\\"OrderDate\\\":\\\"5\\/31\\/2018\\\",\\\"OrderQuantity\\\":3,\\\"UnitPrice\\\":\\\"3,939.60\\\",\\\"CustomerNames\\\":\\\"Pacific Ltd\\\",\\\"CityName\\\":\\\"Overland Park\\\",\\\"State\\\":\\\"Kansas\\\",\\\"ProductName\\\":\\\"Wreaths\\\",\\\"SalesTeam\\\":\\\"Paul Holmes\\\",\\\"Region\\\":\\\"Midwest\\\"}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#cbec34cc-9c1c-47c4-8442-633c9f3bf181">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="Output"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
